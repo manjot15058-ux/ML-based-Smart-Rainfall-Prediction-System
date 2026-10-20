@@ -1,0 +1,446 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>RainfallAI | Offline Rainfall Estimates</title>
+
+    <meta
+        name="description"
+        content="Explore offline historical rainfall estimates for all 23 Punjab districts."
+    >
+
+    <link rel="stylesheet" href="style.css?v=8">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <div class="app-shell">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <a href="#" class="brand">
+                <span class="brand-icon">🌧️</span>
+                <span>Rainfall<span class="brand-accent">AI</span></span>
+            </a>
+
+            <p class="sidebar-label">WORKSPACE</p>
+
+            <nav class="sidebar-nav">
+                <a href="#home" class="nav-link active">
+                    <span>⌂</span> Overview
+                </a>
+                <a href="#forecast" class="nav-link">
+                    <span>☁</span> Forecast
+                </a>
+                <a href="#details" class="nav-link">
+                    <span>◷</span> Estimate details
+                </a>
+            </nav>
+
+            <div class="sidebar-bottom">
+                <div class="status-indicator"></div>
+                <div>
+                    <strong>Rainfall data</strong>
+                    <small id="api-status">Checking local dataset...</small>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content" id="home">
+
+            <header class="topbar">
+                <div>
+                    <p class="eyebrow">OFFLINE HISTORICAL ESTIMATES</p>
+                    <h1>Rainfall <span class="brand-accent">Dashboard</span></h1>
+                </div>
+
+                <div class="live-badge">
+                    <span class="live-dot"></span>
+                    Historical estimate
+                </div>
+            </header>
+
+            <!-- CITY SEARCH -->
+            <section class="search-panel">
+                <div class="search-copy">
+                    <span class="section-kicker">NO WEATHER API REQUIRED</span>
+                    <h2 id="selected-district-title">Historical rainfall by Punjab district</h2>
+                    <p>Choose a district to view daily rainfall estimates from the nearest ERA5 grid point using 2022–2025 history. These are not rain-gauge observations or live forecasts.</p>
+                </div>
+
+                <form id="search-form" class="search-form">
+                    <label for="city-input">Select a Punjab district</label>
+                    <div class="search-controls">
+                        <select id="city-input" name="city">
+                            <option value="Amritsar">Amritsar</option>
+                            <option value="Barnala">Barnala</option>
+                            <option value="Bathinda">Bathinda</option>
+                            <option value="Faridkot">Faridkot</option>
+                            <option value="Fatehgarh Sahib">Fatehgarh Sahib</option>
+                            <option value="Fazilka">Fazilka</option>
+                            <option value="Ferozepur">Ferozepur</option>
+                            <option value="Gurdaspur">Gurdaspur</option>
+                            <option value="Hoshiarpur">Hoshiarpur</option>
+                            <option value="Jalandhar">Jalandhar</option>
+                            <option value="Kapurthala">Kapurthala</option>
+                            <option value="Ludhiana" selected>Ludhiana</option>
+                            <option value="Malerkotla">Malerkotla</option>
+                            <option value="Mansa">Mansa</option>
+                            <option value="Moga">Moga</option>
+                            <option value="Pathankot">Pathankot</option>
+                            <option value="Patiala">Patiala</option>
+                            <option value="Rupnagar">Rupnagar</option>
+                            <option value="Sahibzada Ajit Singh Nagar">Sahibzada Ajit Singh Nagar</option>
+                            <option value="Sangrur">Sangrur</option>
+                            <option value="Shaheed Bhagat Singh Nagar">Shaheed Bhagat Singh Nagar</option>
+                            <option value="Sri Muktsar Sahib">Sri Muktsar Sahib</option>
+                            <option value="Tarn Taran">Tarn Taran</option>
+                        </select>
+                        <button type="submit" id="forecast-button">
+                            <span id="button-text">Show estimates</span>
+                            <span aria-hidden="true"> →</span>
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <div id="message" class="message hidden" role="status"></div>
+
+            <section id="current-conditions" class="details-section">
+                <div class="section-heading compact-heading">
+                    <div>
+                        <p class="eyebrow">2022–2025 HISTORICAL DATA</p>
+                        <h2>Historical rainfall context</h2>
+                        <p id="current-weather-updated" class="muted">
+                            Rainfall summaries for the selected district's nearby ERA5 grid point.
+                        </p>
+                    </div>
+                    <span class="source-chip">Offline dataset</span>
+                </div>
+
+                <div class="metrics-grid">
+                    <article class="metric-card">
+                        <div class="metric-top">
+                            <span class="metric-icon">🌧️</span>
+                            <span class="metric-label">Average annual rainfall</span>
+                        </div>
+                        <p class="metric-value" id="historical-annual-rainfall">Loading...</p>
+                        <p class="metric-caption">Average per year across 2022–2025</p>
+                    </article>
+
+                    <article class="metric-card">
+                        <div class="metric-top">
+                            <span class="metric-icon">💧</span>
+                            <span class="metric-label">Daily average</span>
+                        </div>
+                        <p class="metric-value" id="historical-daily-rainfall">Loading...</p>
+                        <p class="metric-caption">Across all days in the dataset</p>
+                    </article>
+
+                    <article class="metric-card">
+                        <div class="metric-top">
+                            <span class="metric-icon">☔</span>
+                            <span class="metric-label">Rainy-day frequency</span>
+                        </div>
+                        <p class="metric-value" id="historical-rainy-frequency">Loading...</p>
+                        <p class="metric-caption">Days with at least 0.1 mm rainfall</p>
+                    </article>
+
+                    <article class="metric-card">
+                        <div class="metric-top">
+                            <span class="metric-icon">📈</span>
+                            <span class="metric-label">Wettest month</span>
+                        </div>
+                        <p class="metric-value" id="historical-wettest-month">Loading...</p>
+                        <p class="metric-caption" id="historical-wettest-month-rainfall">Highest average daily rainfall</p>
+                    </article>
+                </div>
+                <p class="forecast-disclaimer">
+                    These are historical gridded rainfall summaries, not current weather conditions or rain-gauge observations.
+                </p>
+            </section>
+
+            <!-- FORECAST HEADING -->
+            <section id="forecast" class="section-heading">
+                <div>
+                    <p class="eyebrow">HISTORICAL RAINFALL ESTIMATE</p>
+                    <h2 id="forecast-location">Tomorrow's district estimate</h2>
+                    <p id="forecast-date" class="muted">Loading historical estimate...</p>
+                </div>
+
+                <span class="source-chip">Historical data</span>
+            </section>
+
+            <!-- MAIN RAINFALL CARD -->
+            <section class="hero-card">
+                <div class="hero-decoration decoration-one"></div>
+                <div class="hero-decoration decoration-two"></div>
+
+                <div class="hero-top">
+                    <span class="hero-label">HISTORICAL AVERAGE RAINFALL</span>
+                    <span class="hero-icon" id="weather-icon">📊</span>
+                </div>
+
+                <div class="rainfall-value">
+                    <span id="rainfall-value">--</span>
+                    <span class="rainfall-unit">mm</span>
+                </div>
+
+                <h2 id="weather-summary">Loading historical estimate...</h2>
+
+                <p id="rainfall-description">
+                    The date-matched historical average will appear here.
+                </p>
+
+                <div class="hero-footer">
+                    <div>
+                        <span class="mini-label">Historical rainy-day frequency</span>
+                        <strong id="rain-probability">--%</strong>
+                    </div>
+
+                    <div class="probability-track">
+                        <div
+                            class="probability-fill"
+                            id="probability-fill"
+                            style="width: 0%"
+                        ></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ESTIMATE DETAILS -->
+            <section id="details" class="details-section">
+                <div class="section-heading compact-heading">
+                    <div>
+                        <p class="eyebrow">HISTORICAL ESTIMATE DETAILS</p>
+                        <h2>How this estimate was calculated</h2>
+                    </div>
+                </div>
+
+                <div class="metrics-grid">
+                    <article class="metric-card">
+                        <div class="metric-top">
+                            <span class="metric-icon">📚</span>
+                            <span class="metric-label">Historical samples</span>
+                        </div>
+                        <p class="metric-value" id="estimate-sample-count">--</p>
+                        <p class="metric-caption">Used for this calendar date</p>
+                    </article>
+
+                    <article class="metric-card">
+                        <div class="metric-top">
+                            <span class="metric-icon">🗓️</span>
+                            <span class="metric-label">Estimate method</span>
+                        </div>
+                        <p class="metric-value" id="estimate-method">--</p>
+                        <p class="metric-caption">Based on historical dates</p>
+                    </article>
+
+                    <article class="metric-card">
+                        <div class="metric-top">
+                            <span class="metric-icon">🌧️</span>
+                            <span class="metric-label">Rainfall intensity</span>
+                        </div>
+                        <p class="metric-value" id="rain-category">--</p>
+                        <p class="metric-caption">Based on historical rainfall average</p>
+                    </article>
+
+                    <article class="metric-card">
+                        <div class="metric-top">
+                            <span class="metric-icon">📍</span>
+                            <span class="metric-label">Forecast location</span>
+                        </div>
+                        <p class="metric-value location-value" id="location-name">--</p>
+                        <p class="metric-caption" id="location-country">Historical data location</p>
+                    </article>
+                </div>
+            </section>
+
+            
+<!-- HISTORICAL RAINFALL ESTIMATE -->
+<section class="live-forecast-section" id="live-forecast">
+
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">OFFLINE HISTORICAL ESTIMATE</p>
+            <h2>Tomorrow's rainfall estimate</h2>
+            <p class="muted" id="live-forecast-description">
+                Average historical rainfall on matching calendar dates for the selected district.
+            </p>
+        </div>
+        <span class="source-chip">NOT A LIVE FORECAST</span>
+    </div>
+
+    <div class="live-forecast-card">
+
+        <div class="forecast-top">
+            <div>
+                <p class="forecast-label">HISTORICAL AVERAGE RAINFALL</p>
+                <h3 id="live-rainfall">-- <span>mm</span></h3>
+                <p id="live-forecast-summary">Loading historical estimate...</p>
+            </div>
+            <div class="forecast-weather-icon">🌧️</div>
+        </div>
+
+        <div class="forecast-details">
+            <div class="forecast-detail">
+                <span>Historical rainy-day frequency</span>
+                <strong id="live-rain-probability">--%</strong>
+            </div>
+
+            <div class="forecast-detail">
+                <span>Historical samples</span>
+                <strong id="live-sample-count">--</strong>
+            </div>
+
+            <div class="forecast-detail">
+                <span>Estimate method</span>
+                <strong id="live-estimate-method">--</strong>
+            </div>
+        </div>
+
+        <p id="live-forecast-date" class="forecast-date">
+            Estimate date: waiting...
+        </p>
+
+        <p class="forecast-disclaimer" id="live-estimate-disclaimer">
+            This is a historical estimate from the selected district's nearby ERA5 grid point,
+            not a live weather forecast or a verified prediction from the trained model.
+        </p>
+
+    </div>
+</section>
+
+
+<!-- 7-DAY RAINFALL FORECAST CHART -->
+<section class="weekly-forecast-section" id="weekly-forecast">
+
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">SEVEN-DAY HISTORICAL ESTIMATES</p>
+            <h2>Rainfall date comparisons</h2>
+            <p class="muted">
+                Historical average rainfall and rainy-day frequency for matching dates.
+            </p>
+        </div>
+        <span class="source-chip">HISTORICAL DATA</span>
+    </div>
+
+    <div class="chart-card">
+        <div class="chart-heading">
+            <div>
+                <h3>Historical daily rainfall</h3>
+                <p>Average rainfall by matching calendar date (mm)</p>
+            </div>
+            <span class="chart-icon">📊</span>
+        </div>
+
+        <div class="chart-container">
+            <canvas id="weekly-rainfall-chart"></canvas>
+        </div>
+
+        <p id="weekly-forecast-status" class="chart-status">
+            Loading seven-day historical estimates...
+        </p>
+    </div>
+
+    
+<!-- 7-DAY FORECAST CARDS -->
+<div class="weekly-cards" id="weekly-forecast-cards">
+
+    <div class="weekly-card-placeholder">
+        Seven-day historical estimates will appear here.
+    </div>
+
+</div>
+
+</section>
+
+          
+<section class="analytics-section" id="analytics">
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">HISTORICAL INSIGHTS</p>
+            <h2>Monthly rainfall patterns</h2>
+            <p class="muted" id="analytics-description">
+                Historical daily averages from the selected district's nearby ERA5 grid point.
+            </p>
+        </div>
+        <span class="source-chip">2022–2025 dataset</span>
+    </div>
+    
+<div class="rainfall-summary-grid">
+
+    <div class="rainfall-summary-card">
+        <p>WETTEST MONTH</p>
+        <h3 id="wettest-month">Loading...</h3>
+        <span>Highest average daily rainfall</span>
+    </div>
+
+    <div class="rainfall-summary-card">
+        <p>DRIEST MONTH</p>
+        <h3 id="driest-month">Loading...</h3>
+        <span>Lowest average daily rainfall</span>
+    </div>
+
+    <div class="rainfall-summary-card">
+        <p>AVERAGE DAILY RAINFALL</p>
+        <h3 id="average-rainfall">Loading...</h3>
+        <span>Across the reference dataset</span>
+    </div>
+
+</div>
+
+
+    <div class="chart-card">
+        <div class="chart-heading">
+            <div>
+                <h3>Average daily rainfall</h3>
+                <p>Rainfall in millimetres (mm)</p>
+            </div>
+            <span class="chart-icon">📊</span>
+        </div>
+
+        <div class="chart-container">
+            <canvas id="monthly-rainfall-chart"></canvas>
+        </div>
+
+        <p id="analytics-status" class="chart-status">
+            Loading historical analytics...
+        </p>
+    </div>
+</section>
+  
+            <!-- MODEL TRANSPARENCY -->
+            <section class="info-panel">
+                <div class="info-icon">✦</div>
+                <div>
+                    <h3>Estimate transparency</h3>
+                    <p>
+                    Estimates use ERA5 gridded historical rainfall near each
+                    district headquarters for 2022–2025. They are not local
+                    rain-gauge measurements or predictions of actual future weather.
+                    </p>
+                </div>
+            </section>
+
+            <footer class="footer">
+                <span>🌧️ RainfallAI</span>
+                <a href="https://open-meteo.com/" target="_blank" rel="noreferrer">
+                    Historical weather data by Open-Meteo
+                </a>
+                <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">
+                    District location data © OpenStreetMap contributors
+                </a>
+            </footer>
+
+        </main>
+    </div>
+
+    <script src="script.js?v=8"></script>
+</body>
+</html>
