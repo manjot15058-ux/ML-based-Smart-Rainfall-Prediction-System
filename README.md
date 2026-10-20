@@ -178,7 +178,7 @@ Developed by:
 - Ritika
 
 **Programme:** B.Tech – Artificial Intelligence and Data Science
-**Institution:** CT University
+**University:** CT University
 
 ## 🎓 Conclusion
 
